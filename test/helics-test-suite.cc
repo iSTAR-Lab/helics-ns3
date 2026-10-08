@@ -5,56 +5,53 @@ Copyright (c) 2017-2019, Battelle Memorial Institute; Lawrence Livermore Nationa
 SPDX-License-Identifier: BSD-3-Clause
 */
 
-// Include a header file from your module to test.
 #include "ns3/helics.h"
+#include "ns3/helics-id-tag.h"
 
-// An essential include is test.h
+#include "ns3/packet.h"
 #include "ns3/test.h"
 
 // Do not put your test classes in namespace ns3.  You may find it useful
 // to use the using directive to access the ns3 namespace directly
 using namespace ns3;
 
-// This is an example TestCase.
-class HelicsTestCase1 : public TestCase
+/**
+ * @ingroup tests
+ *
+ * Check that a HelicsIdTag survives being attached to and read back from a packet.
+ */
+class HelicsIdTagTestCase : public TestCase
 {
 public:
-  HelicsTestCase1 ();
-  virtual ~HelicsTestCase1 ();
+  HelicsIdTagTestCase ();
 
 private:
-  virtual void DoRun (void);
+  void DoRun (void) override;
 };
 
-// Add some help text to this case to describe what it is intended to test
-HelicsTestCase1::HelicsTestCase1 ()
-  : TestCase ("Helics test case (does nothing)")
+HelicsIdTagTestCase::HelicsIdTagTestCase ()
+  : TestCase ("HelicsIdTag packet tag round trip")
 {
 }
 
-// This destructor does nothing but we include it as a reminder that
-// the test case should clean up after itself
-HelicsTestCase1::~HelicsTestCase1 ()
-{
-}
-
-//
-// This method is the pure virtual method from class TestCase that every
-// TestCase must implement
-//
 void
-HelicsTestCase1::DoRun (void)
+HelicsIdTagTestCase::DoRun (void)
 {
-  // A wide variety of test macros are available in src/core/test.h
-  NS_TEST_ASSERT_MSG_EQ (true, true, "true doesn't equal true for some reason");
-  // Use this one for floating point comparisons
-  NS_TEST_ASSERT_MSG_EQ_TOL (0.01, 0.01, 0.001, "Numbers are not equal within tolerance");
+  Ptr<Packet> p = Create<Packet> (10);
+  p->AddPacketTag (HelicsIdTag (42));
+
+  HelicsIdTag tag;
+  NS_TEST_ASSERT_MSG_EQ (p->PeekPacketTag (tag), true, "HelicsIdTag not found on packet");
+  NS_TEST_ASSERT_MSG_EQ (tag.GetHelicsId (), 42U, "HelicsIdTag id changed");
+  NS_TEST_ASSERT_MSG_EQ (static_cast<uint32_t> (tag), 42U, "HelicsIdTag conversion operator mismatch");
+  NS_TEST_ASSERT_MSG_EQ (tag.GetSerializedSize (), 4U, "Unexpected HelicsIdTag serialized size");
 }
 
-// The TestSuite class names the TestSuite, identifies what type of TestSuite,
-// and enables the TestCases to be run.  Typically, only the constructor for
-// this class must be defined
-//
+/**
+ * @ingroup tests
+ *
+ * HELICS module test suite.
+ */
 class HelicsTestSuite : public TestSuite
 {
 public:
@@ -62,12 +59,10 @@ public:
 };
 
 HelicsTestSuite::HelicsTestSuite ()
-  : TestSuite ("helics", UNIT)
+  : TestSuite ("helics", Type::UNIT)
 {
-  // TestDuration for TestCase can be QUICK, EXTENSIVE or TAKES_FOREVER
-  AddTestCase (new HelicsTestCase1, TestCase::QUICK);
+  AddTestCase (new HelicsIdTagTestCase, TestCase::Duration::QUICK);
 }
 
-// Do not forget to allocate an instance of this TestSuite
-static HelicsTestSuite helicsTestSuite;
+static HelicsTestSuite helicsTestSuite; ///< Static variable for test initialization
 

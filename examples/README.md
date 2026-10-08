@@ -17,3 +17,25 @@ connect, then start the matching `ns3-*` and `fed-*` example program -- for exam
    publications and subscriptions. Can be run with the `ns3-sndrcv` federate. Integrating
    these with the simulated ns-3 network is not shown as it is very use case dependent.
    Some (unreleased) use cases have written custom `ns3::Application` classes.
+
+## Running the examples
+
+From the top-level ns-3 directory, after building with `--enable-examples`, run each command in its own
+terminal (or in the background):
+
+```bash
+helics_broker -f 2
+./ns3 run --no-build ns3-sndrcv
+./ns3 run --no-build fed-sndrcv
+```
+
+Replace `ns3-sndrcv`/`fed-sndrcv` with `ns3-filter`/`fed-filter` for the filter example. To run
+`fed-pubsub` by itself, start the broker with `-f 1`.
+
+`new-ns3-filter` is a variant of `ns3-filter` that creates its federate, endpoints, and reroute filters from a
+JSON configuration file (default `contrib/helics/examples/ns3-config.json`, change it with `--config=<file>`); it
+can also be run with `fed-filter`.
+
+The ns-3 examples accept `--broker`, `--coretype` (default `zmq`), and `--coreinit` options for connecting to a
+broker that is not running with default settings, and the `fed-*` examples accept the standard HELICS federate
+options (e.g. `--broker`, `--coretype`, `--coreinit`); use `--help` to see the full list of options.

@@ -118,12 +118,11 @@ HelicsApplication::HelicsApplication ()
 {
   NS_LOG_FUNCTION (this);
   m_sent = 0;
-  m_socket = 0;
+  m_socket = nullptr;
   
-  //Setting up jitter random variable stream
+  //Setting up jitter random variable stream; the bounds are given
+  //at each draw since the attributes are not set yet in the constructor
   m_rand_delay_ns = CreateObject<UniformRandomVariable> ();
-  m_rand_delay_ns->SetAttribute ("Min", DoubleValue  (m_jitterMinNs));
-  m_rand_delay_ns->SetAttribute ("Max", DoubleValue  (m_jitterMaxNs));
 
   m_next_tag_id = 0;
 }
@@ -131,7 +130,7 @@ HelicsApplication::HelicsApplication ()
 HelicsApplication::~HelicsApplication()
 {
   NS_LOG_FUNCTION (this);
-  m_socket = 0;
+  m_socket = nullptr;
 }
 
 void HelicsApplication::SetupFilterApplication (const helics::Filter &filterInstance, const helics::Endpoint &epInstance)
@@ -148,7 +147,9 @@ void
 HelicsApplication::SetFilterName (const std::string &name)
 {
   NS_LOG_FUNCTION (this << name);
-  m_filter_id = helics_federate->registerFilter ("ns3_"+name, name);
+  m_filter_id = helics_federate->registerFilter ("ns3_"+name);
+  // Intercept messages sent from the named endpoint
+  m_filter_id.addSourceTarget (name);
   m_filterOp = std::make_shared<helics::MessageDestOperator> ([this](const std::string &src, const std::string &dest)
       {
           const std::string &fedName = helics_federate->getName();
@@ -161,7 +162,7 @@ HelicsApplication::SetFilterName (const std::string &name)
               return fedName + '/' + src;
           }
       });
-  helics_federate->setFilterOperator (m_filter_id, m_filterOp);
+  m_filter_id.setOperator (m_filterOp);
   SetEndpointName(name, false);
 }
 
@@ -251,7 +252,7 @@ HelicsApplication::StartApplication (void)
 
   int retval = 1;
 
-  if (m_socket == 0) {
+  if (!m_socket) {
     TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
     m_socket = Socket::CreateSocket (GetNode (), tid);
     if (!m_socket) {
@@ -289,11 +290,11 @@ HelicsApplication::StopApplication ()
 {
   NS_LOG_FUNCTION (this);
 
-  if (m_socket != 0) 
+  if (m_socket) 
     {
       m_socket->Close ();
       m_socket->SetRecvCallback (MakeNullCallback<void, Ptr<Socket> > ());
-      m_socket = 0;
+      m_socket = nullptr;
     }
 }
 

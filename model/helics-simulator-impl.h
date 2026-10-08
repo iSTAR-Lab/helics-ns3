@@ -24,12 +24,12 @@
 #include "ns3/simulator-impl.h"
 #include "ns3/scheduler.h"
 #include "ns3/event-impl.h"
-#include "ns3/system-thread.h"
-#include "ns3/system-mutex.h"
 
 #include "ns3/ptr.h"
 
 #include <list>
+#include <mutex>
+#include <thread>
 
 /**
  * \file
@@ -42,7 +42,8 @@ namespace ns3 {
 /**
  * \ingroup simulator
  *
- * The default single process simulator implementation.
+ * A single process simulator implementation that synchronizes its
+ * time advancement with a HELICS co-simulation.
  */
 class HelicsSimulatorImpl : public SimulatorImpl
 {
@@ -56,34 +57,38 @@ public:
   /** Constructor. */
   HelicsSimulatorImpl ();
   /** Destructor. */
-  ~HelicsSimulatorImpl ();
+  ~HelicsSimulatorImpl () override;
 
   // Inherited
-  virtual void Destroy ();
-  virtual bool IsFinished (void) const;
-  virtual void Stop (void);
-  virtual void Stop (const Time &delay);
-  virtual EventId Schedule (const Time &delay, EventImpl *event);
-  virtual void ScheduleWithContext (uint32_t context, const Time &delay, EventImpl *event);
-  virtual EventId ScheduleNow (EventImpl *event);
-  virtual EventId ScheduleDestroy (EventImpl *event);
-  virtual void Remove (const EventId &id);
-  virtual void Cancel (const EventId &id);
-  virtual bool IsExpired (const EventId &id) const;
-  virtual void Run (void);
-  virtual Time Now (void) const;
-  virtual Time GetDelayLeft (const EventId &id) const;
-  virtual Time GetMaximumSimulationTime (void) const;
-  virtual void SetScheduler (ObjectFactory schedulerFactory);
-  virtual uint32_t GetSystemId (void) const; 
-  virtual uint32_t GetContext (void) const;
-  virtual uint64_t GetEventCount (void) const;
+  void Destroy () override;
+  bool IsFinished (void) const override;
+  void Stop (void) override;
+  EventId Stop (const Time &delay) override;
+  EventId Schedule (const Time &delay, EventImpl *event) override;
+  void ScheduleWithContext (uint32_t context, const Time &delay, EventImpl *event) override;
+  EventId ScheduleNow (EventImpl *event) override;
+  EventId ScheduleDestroy (EventImpl *event) override;
+  void Remove (const EventId &id) override;
+  void Cancel (const EventId &id) override;
+  bool IsExpired (const EventId &id) const override;
+  void Run (void) override;
+  Time Now (void) const override;
+  Time GetDelayLeft (const EventId &id) const override;
+  Time GetMaximumSimulationTime (void) const override;
+  void SetScheduler (ObjectFactory schedulerFactory) override;
+  uint32_t GetSystemId (void) const override;
+  uint32_t GetContext (void) const override;
+  uint64_t GetEventCount (void) const override;
 
-
-    virtual Time Next (void) const;
+  /**
+   * Get the timestamp of the next event.
+   * @return the time of the next event, or the maximum simulation time
+   *         if there are no events.
+   */
+  Time Next (void) const;
 
 private:
-  virtual void DoDispose (void);
+  void DoDispose (void) override;
 
   /** Process the next event. */
   void ProcessOneEvent (void);
@@ -100,7 +105,7 @@ private:
     EventImpl *event;
   };
   /** Container type for the events from a different context. */
-  typedef std::list<struct EventWithContext> EventsWithContext;
+  typedef std::list<EventWithContext> EventsWithContext;
   /** The container of events from a different context. */
   EventsWithContext m_eventsWithContext;
   /**
@@ -109,7 +114,7 @@ private:
    */
   bool m_eventsWithContextEmpty;
   /** Mutex to control access to the list of events with context. */
-  SystemMutex m_eventsWithContextMutex;
+  std::mutex m_eventsWithContextMutex;
 
   /** Container type for the events to run at Simulator::Destroy() */
   typedef std::list<EventId> DestroyEvents;
@@ -128,6 +133,8 @@ private:
   uint64_t m_currentTs;
   /** Execution context of the current event. */
   uint32_t m_currentContext;
+  /** The event count. */
+  uint64_t m_eventCount;
   /**
    * Number of events that have been inserted but not yet scheduled,
    *  not counting the Destroy events; this is used for validation
@@ -135,7 +142,7 @@ private:
   int m_unscheduledEvents;
 
   /** Main execution thread. */
-  SystemThread::ThreadId m_main;
+  std::thread::id m_mainThreadId;
 };
 
 } // namespace ns3

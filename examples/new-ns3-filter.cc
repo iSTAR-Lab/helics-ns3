@@ -51,8 +51,11 @@ NS_LOG_COMPONENT_DEFINE ("HelicsExample");
 int
 main (int argc, char *argv[])
 {
-  std::cout << "number of args: " << argc << std::endl;
-  std::string config = argv[1];
+  std::string config = "contrib/helics/examples/ns3-config.json";
+
+  CommandLine cmd (__FILE__);
+  cmd.AddValue ("config", "HELICS federate JSON configuration file", config);
+  cmd.Parse (argc, argv);
 
   std::cout << "Helics configuration file: " << config.c_str() << std::endl;
   HelicsHelper helicsHelper;
@@ -61,12 +64,11 @@ main (int argc, char *argv[])
   std::cout << "Getting Federate information" << std::endl;
 
   std::string fedName = helics_federate->getName();
-  std::cout << "Federate name: " << helics_federate->getName().c_str() << std::endl;
+  std::cout << "Federate name: " << fedName << std::endl;
   int ep_count = helics_federate->getEndpointCount();
   for(int i=0; i < ep_count; i++){
       helics::Endpoint ep = helics_federate->getEndpoint(i);
       std::string epName = ep.getName();
-      std::string ep_info = ep.getInfo();
       size_t pos = epName.find(fedName);
       if(pos != std::string::npos) {
           epName.erase(pos, fedName.length()+1);

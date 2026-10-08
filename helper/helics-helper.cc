@@ -80,7 +80,15 @@ HelicsHelper::SetupFederate(std::string &jsonString)
 void
 HelicsHelper::SetupFederate(std::vector<std::string> &args)
 {
-  helics::FederateInfo fi (args);
+  // args is in argv order, including the program name; FederateInfo's vector
+  // constructor expects CLI11's reversed order without it, so go through argv
+  std::vector<char *> argv;
+  argv.reserve (args.size ());
+  for (auto &arg : args)
+    {
+      argv.push_back (arg.data ());
+    }
+  helics::FederateInfo fi (static_cast<int> (argv.size ()), argv.data ());
   helics_federate = std::make_shared<helics::CombinationFederate> (name, fi);
 }
 
@@ -189,7 +197,7 @@ HelicsHelper::InstallStaticSource (Ptr<Node> node, const std::string &name, cons
     ApplicationContainer apps;
     Ptr<HelicsStaticSourceApplication> app = m_factory_source.Create<HelicsStaticSourceApplication> ();
     if (!app) {
-      NS_FATAL_ERROR ("Failed to create HelicsStaticSinkApplication");
+      NS_FATAL_ERROR ("Failed to create HelicsStaticSourceApplication");
     }
     app->SetEndpointName (name, is_global);
     app->SetDestination (destination);

@@ -54,7 +54,7 @@ main (int argc, char *argv[])
 
   HelicsHelper helicsHelper;
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("nCsma", "Number of \"extra\" CSMA nodes/devices", nCsma);
   cmd.AddValue ("verbose", "Tell echo applications to log if true", verbose);
   helicsHelper.SetupCommandLine(cmd);

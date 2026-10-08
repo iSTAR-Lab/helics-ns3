@@ -29,6 +29,8 @@ int main (int argc, char *argv[])
     app.add_option ("--endpoint1,--source,-s", srcEndpoint, "name of the source endpoint");
     app.add_option ("--endpoint2,--dest,-d", dstEndpoint, "name of the destination endpoint");
 
+    // Federate options (--broker, --coretype, ...) are parsed by FederateInfo below
+    app.allow_extras ();
     auto ret = app.helics_parse (argc, argv);
 
     helics::FederateInfo fi {};

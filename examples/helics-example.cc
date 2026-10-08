@@ -19,7 +19,7 @@ main (int argc, char *argv[])
 
   HelicsHelper helics;
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("verbose", "Tell application to log if true", verbose);
   helics.SetupCommandLine(cmd);
   cmd.Parse (argc,argv);
@@ -29,8 +29,8 @@ main (int argc, char *argv[])
   helics.SetupApplicationFederate();
   NS_LOG_INFO ("Simulator Impl bound, about to Run simulator");
 
-  Simulator::Run ();
   Simulator::Stop (Seconds (10.0));
+  Simulator::Run ();
   Simulator::Destroy ();
   return 0;
 }
